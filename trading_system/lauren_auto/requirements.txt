@@ -1,3 +1,0 @@
-robin_stocks
-numpy
-scipy
