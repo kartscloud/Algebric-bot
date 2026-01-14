@@ -35,6 +35,12 @@ from scipy.optimize import brentq
 from math import log, sqrt, exp
 import logging
 from pathlib import Path
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from collections import deque
+
+# In-memory log storage (last 500 entries)
+log_buffer = deque(maxlen=500)
 
 # =============================================================================
 # CONFIGURATION
@@ -125,17 +131,80 @@ TRADES_FILE = f"{DATA_DIR}/trades.json"
 VOL_CACHE_FILE = f"{DATA_DIR}/vol_cache.json"
 
 Path(DATA_DIR).mkdir(parents=True, exist_ok=True)
-Path(LOG_DIR).mkdir(parents=True, exist_ok=True)
+
+# =============================================================================
+# LOGGING (In-memory only - no files saved)
+# =============================================================================
+
+class MemoryLogHandler(logging.Handler):
+    """Custom handler that stores logs in memory"""
+    def emit(self, record):
+        log_buffer.append(self.format(record))
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | LAUREN-AGGRO | %(levelname)s | %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(f'{LOG_DIR}/lauren.log')
+        MemoryLogHandler()
     ]
 )
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# LOG SERVER (Access logs via browser)
+# =============================================================================
+
+LOG_SERVER_PORT = 8080
+
+class WebLogHandler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass  # Suppress HTTP log messages
+
+    def do_GET(self):
+        html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LAUREN AGGRO - Live Logs</title>
+    <meta http-equiv="refresh" content="5">
+    <style>
+        body {{ background: #1a1a2e; color: #0f0; font-family: monospace; padding: 20px; }}
+        h1 {{ color: #ff6b35; }}
+        pre {{ background: #0d0d1a; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; }}
+        .stats {{ color: #00d4ff; margin-bottom: 10px; }}
+    </style>
+</head>
+<body>
+    <h1>LAUREN AGGRO - Live Logs</h1>
+    <p class="stats">In-memory logs (last 500 entries) | Auto-refreshes every 5 seconds | {time}</p>
+    <pre>{logs}</pre>
+</body>
+</html>
+"""
+        try:
+            logs = '\n'.join(log_buffer) if log_buffer else "No logs yet. Bot is starting..."
+            page = html.format(
+                time=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                logs=logs
+            )
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(page.encode())
+        except Exception as e:
+            self.send_response(500)
+            self.end_headers()
+            self.wfile.write(f"Error: {e}".encode())
+
+def start_log_server():
+    """Start the log server in a background thread"""
+    try:
+        server = HTTPServer(('0.0.0.0', LOG_SERVER_PORT), WebLogHandler)
+        logger.info(f"Log server started on http://0.0.0.0:{LOG_SERVER_PORT}")
+        server.serve_forever()
+    except Exception as e:
+        logger.error(f"Log server error: {e}")
 
 # =============================================================================
 # BLACK-SCHOLES
@@ -1060,7 +1129,14 @@ def run():
 
 if __name__ == "__main__":
     import sys
-    
+
+    # Start log server in background thread
+    log_thread = threading.Thread(target=start_log_server, daemon=True)
+    log_thread.start()
+    print(f"\n{'='*60}")
+    print(f"LOG SERVER RUNNING: http://YOUR_EC2_IP:{LOG_SERVER_PORT}")
+    print(f"{'='*60}\n")
+
     if '--trades' in sys.argv:
         trades = load(TRADES_FILE) or []
         for t in trades:
