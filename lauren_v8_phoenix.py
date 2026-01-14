@@ -46,9 +46,9 @@ from pathlib import Path
 # CONFIGURATION
 # =============================================================================
 
-# Robinhood credentials (same as quant_trader)
-RH_USERNAME = "kartikaygeorg@gmail.com"
-RH_PASSWORD = "SUPERsuace101!"
+# Robinhood credentials (from environment variables)
+RH_USERNAME = os.environ.get("RH_USERNAME", "")
+RH_PASSWORD = os.environ.get("RH_PASSWORD", "")
 
 # Tickers LAUREN focuses on (different from quant_trader)
 TICKERS = ['NVDL', 'TSLL']

@@ -1,0 +1,6 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "python lauren_v8_phoenix.py"
+restartPolicyType = "always"

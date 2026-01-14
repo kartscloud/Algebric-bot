@@ -1,0 +1,4 @@
+robin_stocks
+numpy
+scipy
+requests

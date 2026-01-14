@@ -1,0 +1,22 @@
+# Data and logs
+lauren_v8_data/
+lauren_v8_logs/
+data/
+logs/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
