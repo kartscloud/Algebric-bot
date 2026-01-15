@@ -149,8 +149,16 @@ def run_script(script_path):
         # Read output line by line
         for line in iter(process.stdout.readline, ''):
             if line:
-                timestamp = datetime.now().strftime('%H:%M:%S')
-                output_buffer.append(f"[{timestamp}] {line.rstrip()}")
+                # Handle carriage returns (progress indicators)
+                if '\r' in line:
+                    # Only keep the last part after the last carriage return
+                    line = line.split('\r')[-1]
+
+                # Skip empty lines and repetitive loading animations
+                line = line.rstrip()
+                if line and not line.startswith('Loading Market Data'):
+                    timestamp = datetime.now().strftime('%H:%M:%S')
+                    output_buffer.append(f"[{timestamp}] {line}")
 
         process.wait()
         output_buffer.append("="*60)
