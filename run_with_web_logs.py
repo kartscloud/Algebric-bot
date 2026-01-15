@@ -32,6 +32,7 @@ class LogHandler(BaseHTTPRequestHandler):
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Trading Bot - Live Output</title>
     <meta http-equiv="refresh" content="3">
     <style>
@@ -118,9 +119,9 @@ class LogHandler(BaseHTTPRequestHandler):
             )
 
             self.send_response(200)
-            self.send_header('Content-type', 'text/html')
+            self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
-            self.wfile.write(page.encode())
+            self.wfile.write(page.encode('utf-8'))
         except Exception as e:
             self.send_response(500)
             self.end_headers()
@@ -131,12 +132,14 @@ def run_script(script_path):
     global process
 
     try:
-        # Run the script
+        # Run the script with UTF-8 encoding
         process = subprocess.Popen(
             [sys.executable, script_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
+            encoding='utf-8',
+            errors='replace',  # Replace invalid characters instead of crashing
             bufsize=1
         )
 
