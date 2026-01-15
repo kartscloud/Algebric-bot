@@ -156,7 +156,7 @@ def run_script(script_path):
 
                 # Skip empty lines and repetitive loading animations
                 line = line.rstrip()
-                if line and not line.startswith('Loading Market Data'):
+                if line and 'Loading Market Data' not in line:
                     timestamp = datetime.now().strftime('%H:%M:%S')
                     output_buffer.append(f"[{timestamp}] {line}")
 
